@@ -16,6 +16,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
+	github.com/lithammer/fuzzysearch v1.1.5 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect

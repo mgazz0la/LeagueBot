@@ -2,6 +2,7 @@ package sleeper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,12 +15,11 @@ import (
 
 type sleeperClient struct {
 	c *http.Client
-
-	players map[playerID]player
 }
 
 const (
-	apiBaseURL = "https://api.sleeper.app/v1/"
+	apiBaseURL  = "https://api.sleeper.app/v1/"
+	playersJSON = "internal/platform/sleeper/players.json"
 )
 
 func newSleeperClient() *sleeperClient {
@@ -69,6 +69,21 @@ func (s *sleeperClient) GetRosters(id LeagueID) ([]roster, error) {
 	return rs, nil
 }
 
+func (s *sleeperClient) GetTransactions(id LeagueID, week uint) ([]transaction, error) {
+	b, err := s.get(fmt.Sprintf("league/%s/transactions/%d", id, week))
+	if err != nil {
+		return nil, err
+	}
+
+	var ts []transaction
+	err = json.Unmarshal(b, &ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return ts, nil
+}
+
 func (s *sleeperClient) get(path string) ([]byte, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", apiBaseURL, path), nil)
 	if err != nil {
@@ -85,42 +100,51 @@ func (s *sleeperClient) get(path string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func (s *sleeperClient) maybeLoadPlayers() (bool, error) {
-	path, err := filepath.Abs("internal/platform/sleeper/players.json")
+func (s *sleeperClient) GetPlayers() (map[playerID]*player, error) {
+	path, err := filepath.Abs(playersJSON)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	playerJsonFile, err := os.Open(path)
-	if err != nil {
-		return false, err
-	}
-
-	fileInfo, err := playerJsonFile.Stat()
-	if err != nil {
-		return false, err
-	}
-
-	if time.Now().Sub(fileInfo.ModTime()) > 24*time.Hour {
-		fmt.Print("LOAD AGAIN PLEASE")
-		// return false, err
+	stat, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) || time.Now().Sub(stat.ModTime()) > 24*time.Hour {
+		if err = s.fetchPlayerList(); err != nil {
+			return nil, err
+		}
 	}
 
 	fileData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	err = json.Unmarshal(fileData, &s.players)
+	var players map[playerID]*player
+	err = json.Unmarshal(fileData, &players)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	for _, v := range s.players {
-		if v.Position == "" {
-			fmt.Println(v)
-		}
+	return players, nil
+}
+
+// This endpoint should be called at most once per day, therefore we save the results
+// in a known file location
+func (s *sleeperClient) fetchPlayerList() error {
+	fmt.Println("ALERT: fetching new player list!")
+	resp, err := s.get("players/nfl")
+	if err != nil {
+		return err
 	}
 
-	return true, nil
+	f, err := os.Create(playersJSON)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(resp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

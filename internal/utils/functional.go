@@ -16,11 +16,37 @@ func Mapi[A any, B any](f func(A, int) B, as []A) []B {
 	return bs
 }
 
+func MapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func MapValues[K comparable, V any](m map[K]V) []V {
-	vs := make([]V, len(m))
+	values := make([]V, 0, len(m))
 	for _, v := range m {
-		vs = append(vs, v)
+		values = append(values, v)
 	}
 
-	return vs
+	return values
+}
+
+func First[A any, B any](a A, _ B) A {
+	return a
+}
+
+func Second[A any, B any](_ A, b B) B {
+	return b
+}
+
+func FindFirstI[A any](as []A, f func(A) bool) (int, bool) {
+	for i := range as {
+		if f(as[i]) {
+			return i, true
+		}
+	}
+
+	return 0, false
 }

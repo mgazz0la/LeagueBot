@@ -11,10 +11,11 @@ import (
 type Config struct {
 	Token  string `json:"token"`
 	Guilds []struct {
-		GuildName       string           `json:"guild_name"`
-		GuildID         discord.GuildID  `json:"guild_id"`
-		LeagueName      string           `json:"league_name"`
-		SleeperLeagueID sleeper.LeagueID `json:"sleeper_league_id"`
+		GuildName             string            `json:"guild_name"`
+		GuildID               discord.GuildID   `json:"guild_id"`
+		LeagueName            string            `json:"league_name"`
+		SleeperLeagueID       sleeper.LeagueID  `json:"sleeper_league_id"`
+		NotificationChannelID discord.ChannelID `json:"notification_channel_id"`
 	} `json:"guilds"`
 }
 

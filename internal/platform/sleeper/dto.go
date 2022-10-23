@@ -3,13 +3,15 @@ package sleeper
 type (
 	LeagueID string
 	userID   string
+	rosterID int
 	playerID string
 
 	player struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Position  string `json:"position"`
-		Team      string `json:"team"`
+		PlayerID  playerID `json:"player_id"`
+		FirstName string   `json:"first_name"`
+		LastName  string   `json:"last_name"`
+		Position  string   `json:"position"`
+		Team      string   `json:"team"`
 	}
 
 	user struct {
@@ -22,6 +24,7 @@ type (
 
 	roster struct {
 		UserID   userID     `json:"owner_id"`
+		RosterID rosterID   `json:"roster_id"`
 		Starters []playerID `json:"starters"`
 		Settings struct {
 			Wins               uint `json:"wins"`
@@ -39,6 +42,10 @@ type (
 		Metadata struct {
 			Record string `json:"record"` // e.g. "LLWWW"
 		} `json:"metadata"`
+	}
+
+	transaction struct {
+		Type string `json:"type"`
 	}
 )
 

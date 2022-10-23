@@ -1,18 +1,24 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type (
+	SquadID  string
+	PlayerID string
+
 	Team struct {
-		Name      string
-		ShortName string
-		Bye       uint
+		Name string
+		Bye  uint
 	}
 
 	Position int
 
 	Player struct {
-		Team
+		Team Team
+
+		PlayerID PlayerID
 
 		FirstName string
 		LastName  string
@@ -25,6 +31,7 @@ type (
 		Name      string
 		OwnerName string
 		Seed      uint
+		SquadID   SquadID
 
 		Wins          uint
 		Losses        uint
@@ -32,13 +39,18 @@ type (
 		PointsAgainst float32
 		WaiverBudget  uint
 
-		Starters []Player
-		Bench    []Player
+		Starters []PlayerID
+		Bench    []PlayerID
+		IR       []PlayerID
+	}
+
+	Transaction struct {
+		Type string
 	}
 )
 
-func (s Squad) String() string {
-	return fmt.Sprintf("#%d: (%d-%d) (%0.2f) %s", s.Seed, s.Wins, s.Losses, s.PointsFor, s.Name)
+func (p Player) String() string {
+	return fmt.Sprintf("%s %s", p.FirstName, p.LastName)
 }
 
 const (

@@ -8,7 +8,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/mgazz0la/leaguebot/internal/config"
 	"github.com/mgazz0la/leaguebot/internal/controller/discord"
+	"github.com/mgazz0la/leaguebot/internal/league"
 	"github.com/mgazz0la/leaguebot/internal/platform/sleeper"
+	"github.com/mgazz0la/leaguebot/internal/watcher"
 )
 
 func main() {
@@ -25,9 +27,15 @@ func main() {
 
 	botStates := make(map[discord.GuildID]*discord.BotState)
 	for i := range cfg.Guilds {
-		botStates[cfg.Guilds[i].GuildID] = &discord.BotState{
+		gid := cfg.Guilds[i].GuildID
+		botStates[gid] = &discord.BotState{
 			Platform: sleeper.NewSleeper(cfg.Guilds[i].SleeperLeagueID),
+			League:   new(league.LeagueState),
 		}
+		if err = botStates[gid].League.Load(botStates[gid].Platform); err != nil {
+			log.Fatalf("Failed to load league state: %v", err)
+		}
+		go watcher.TransactionWatcher(botStates[cfg.Guilds[i].GuildID])
 	}
 
 	discord.RegisterHandlers(d, botStates)

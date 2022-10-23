@@ -3,8 +3,11 @@ package discord
 import (
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/mgazz0la/leaguebot/internal/domain"
@@ -15,6 +18,7 @@ type handler func(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotS
 
 var handlers = map[string]handler{
 	"playoffs": playoffHandler,
+	"roster":   rosterHandler,
 }
 
 func RegisterHandlers(d *discordgo.Session, botStates map[GuildID]*BotState) {
@@ -27,21 +31,104 @@ func RegisterHandlers(d *discordgo.Session, botStates map[GuildID]*BotState) {
 	})
 }
 
+func rosterHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
+	var err error
+	switch i.Type {
+	case discordgo.InteractionApplicationCommand:
+		sqid := domain.SquadID(i.ApplicationCommandData().Options[0].StringValue())
+		sq, ok := bs.League.GetSquads()[sqid]
+		if !ok {
+			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: fmt.Sprintf("who the heck is %s???", sqid),
+				},
+			})
+			return
+		}
+
+		pmap := bs.League.GetPlayerMap()
+		fields := []*discordgo.MessageEmbedField{
+			{
+				Name: "Starters",
+				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
+					return pmap[pid].FirstName + " " + pmap[pid].LastName
+				}, sq.Starters), "\n"),
+			},
+			{
+				Name: "Bench",
+				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
+					return pmap[pid].FirstName + " " + pmap[pid].LastName
+				}, sq.Bench), "\n"),
+			},
+		}
+		if len(sq.IR) > 0 {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name: "IR",
+				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
+					return pmap[pid].FirstName + " " + pmap[pid].LastName
+				}, sq.IR), "\n"),
+			})
+		}
+
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: []*discordgo.MessageEmbed{
+					{
+						Type:   discordgo.EmbedTypeRich,
+						Title:  sq.Name,
+						Fields: fields,
+					},
+				},
+			},
+		})
+	case discordgo.InteractionApplicationCommandAutocomplete:
+		txt := i.ApplicationCommandData().Options[0].StringValue()
+		choices := utils.Map(func(s *domain.Squad) *discordgo.ApplicationCommandOptionChoice {
+			return &discordgo.ApplicationCommandOptionChoice{
+				Name:  s.Name,
+				Value: s.SquadID,
+			}
+		}, utils.MapValues(bs.League.GetSquads()))
+
+		if txt != "" {
+			sort.Slice(choices, func(i, j int) bool {
+				return fuzzy.RankMatchFold(txt, choices[i].Name) > fuzzy.RankMatchFold(txt, choices[j].Name)
+			})
+		}
+
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+			Data: &discordgo.InteractionResponseData{
+				Choices: choices,
+			},
+		})
+	}
+	if err != nil {
+		log.Println(err.Error())
+	}
+}
+
 func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
 	sqs, _ := bs.Platform.GetSquads()
+	utils.ApplySeeds(sqs)
+
 	tBAMF := table.NewWriter()
 	tBAMF.SetStyle(table.StyleRounded)
 	tBAMF.Style().Options.SeparateColumns = false
 	tBAMF.Style().Options.DrawBorder = false
 	tBAMF.AppendRows(
 		utils.Map(func(s *domain.Squad) table.Row {
+			winLoss := fmt.Sprintf("%d-%d", s.Wins, s.Losses)
+			seed := fmt.Sprint(s.Seed)
 			switch s.Seed {
 			case 1, 2:
-				return table.Row{fmt.Sprintf("%d*", s.Seed), s.Name, fmt.Sprintf("%d-%d", s.Wins, s.Losses), s.PointsFor}
+				seed += "*"
 			case 5, 6:
-				return table.Row{fmt.Sprintf("%d†", s.Seed), s.Name, fmt.Sprintf("%d-%d", s.Wins, s.Losses), s.PointsFor}
+				seed += "†"
 			}
-			return table.Row{s.Seed, s.Name, fmt.Sprintf("%d-%d", s.Wins, s.Losses), s.PointsFor}
+			return table.Row{seed, s.Name, winLoss, s.PointsFor}
 		}, sqs[:6]),
 	)
 
@@ -51,11 +138,12 @@ func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *Bo
 	tSacko.Style().Options.DrawBorder = false
 	tSacko.AppendRows(
 		utils.Map(func(s *domain.Squad) table.Row {
-			switch s.Seed {
-			case 11, 12:
-				return table.Row{fmt.Sprintf("%d*", s.Seed), s.Name, fmt.Sprintf("%d-%d", s.Wins, s.Losses), s.PointsFor}
+			winLoss := fmt.Sprintf("%d-%d", s.Wins, s.Losses)
+			seed := fmt.Sprint(s.Seed)
+			if s.Seed == 11 || s.Seed == 12 {
+				seed += "*"
 			}
-			return table.Row{s.Seed, s.Name, fmt.Sprintf("%d-%d", s.Wins, s.Losses), s.PointsFor}
+			return table.Row{seed, s.Name, winLoss, s.PointsFor}
 		}, sqs[6:]),
 	)
 
