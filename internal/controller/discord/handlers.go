@@ -128,7 +128,7 @@ func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *Bo
 			case 5, 6:
 				seed += "†"
 			}
-			return table.Row{seed, s.Name, winLoss, s.PointsFor}
+			return table.Row{seed, s.Name, winLoss, fmt.Sprintf("%.2f", s.PointsFor)}
 		}, sqs[:6]),
 	)
 
@@ -143,7 +143,7 @@ func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *Bo
 			if s.Seed == 11 || s.Seed == 12 {
 				seed += "*"
 			}
-			return table.Row{seed, s.Name, winLoss, s.PointsFor}
+			return table.Row{seed, s.Name, winLoss, fmt.Sprintf("%.2f", s.PointsFor)}
 		}, sqs[6:]),
 	)
 
