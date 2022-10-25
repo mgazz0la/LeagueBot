@@ -11,6 +11,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/mgazz0la/leaguebot/internal/domain"
+	"github.com/mgazz0la/leaguebot/internal/league"
 	"github.com/mgazz0la/leaguebot/internal/utils"
 )
 
@@ -31,88 +32,129 @@ func RegisterHandlers(d *discordgo.Session, botStates map[GuildID]*BotState) {
 	})
 }
 
-func rosterHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
-	var err error
-	switch i.Type {
-	case discordgo.InteractionApplicationCommand:
-		sqid := domain.SquadID(i.ApplicationCommandData().Options[0].StringValue())
-		sq, ok := bs.League.GetSquads()[sqid]
-		if !ok {
-			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf("who the heck is %s???", sqid),
-				},
-			})
-			return
-		}
-
-		pmap := bs.League.GetPlayerMap()
-		fields := []*discordgo.MessageEmbedField{
-			{
-				Name: "Starters",
-				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
-					return pmap[pid].FirstName + " " + pmap[pid].LastName
-				}, sq.Starters), "\n"),
-			},
-			{
-				Name: "Bench",
-				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
-					return pmap[pid].FirstName + " " + pmap[pid].LastName
-				}, sq.Bench), "\n"),
-			},
-		}
-		if len(sq.IR) > 0 {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name: "IR",
-				Value: strings.Join(utils.Map(func(pid domain.PlayerID) string {
-					return pmap[pid].FirstName + " " + pmap[pid].LastName
-				}, sq.IR), "\n"),
-			})
-		}
-
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+func completedRosterHandler(
+	s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState,
+) error {
+	sqid := domain.SquadID(i.ApplicationCommandData().Options[0].StringValue())
+	sq, ok := bs.League.GetSquadByID(sqid)
+	if !ok {
+		return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{
-					{
-						Type:   discordgo.EmbedTypeRich,
-						Title:  sq.Name,
-						Fields: fields,
-					},
-				},
-			},
-		})
-	case discordgo.InteractionApplicationCommandAutocomplete:
-		txt := i.ApplicationCommandData().Options[0].StringValue()
-		choices := utils.Map(func(s *domain.Squad) *discordgo.ApplicationCommandOptionChoice {
-			return &discordgo.ApplicationCommandOptionChoice{
-				Name:  s.Name,
-				Value: s.SquadID,
-			}
-		}, utils.MapValues(bs.League.GetSquads()))
-
-		if txt != "" {
-			sort.Slice(choices, func(i, j int) bool {
-				return fuzzy.RankMatchFold(txt, choices[i].Name) > fuzzy.RankMatchFold(txt, choices[j].Name)
-			})
-		}
-
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionApplicationCommandAutocompleteResult,
-			Data: &discordgo.InteractionResponseData{
-				Choices: choices,
+				Content: fmt.Sprintf("who the heck is %s???", sqid),
 			},
 		})
 	}
+
+	makePlayerNameList := func(pid domain.PlayerID) string {
+		p, ok := bs.League.GetPlayerByID(pid)
+		if !ok {
+			log.Printf("could not find player [%v]", pid)
+			p.FirstName = "D'Pez"
+			p.LastName = "Poopsie"
+		}
+
+		return p.FirstName + " " + p.LastName
+	}
+
+	embedFields := []*discordgo.MessageEmbedField{
+		{
+			Name:  "Starters",
+			Value: strings.Join(utils.Map(makePlayerNameList, sq.Starters), "\n"),
+		},
+		{
+			Name:  "Bench",
+			Value: strings.Join(utils.Map(makePlayerNameList, sq.Bench), "\n"),
+		},
+	}
+	if len(sq.IR) > 0 {
+		embedFields = append(embedFields, &discordgo.MessageEmbedField{
+			Name:  "IR",
+			Value: strings.Join(utils.Map(makePlayerNameList, sq.IR), "\n"),
+		})
+	}
+
+	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Type:   discordgo.EmbedTypeRich,
+					Title:  sq.Name,
+					Fields: embedFields,
+				},
+			},
+		},
+	})
+}
+
+func autocompleteRosterHandler(
+	s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState,
+) error {
+	txt := i.ApplicationCommandData().Options[0].StringValue()
+	sqs, err := bs.League.GetSquads()
+	if err != nil {
+		log.Println(err.Error())
+		return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "could not get roster list--go complain to Commish",
+			},
+		})
+	}
+
+	choices := utils.Map(func(s *domain.Squad) *discordgo.ApplicationCommandOptionChoice {
+		return &discordgo.ApplicationCommandOptionChoice{
+			Name:  s.Name,
+			Value: s.SquadID,
+		}
+	}, utils.Values(sqs))
+
+	if txt != "" {
+		sort.Slice(choices, func(i, j int) bool {
+			return fuzzy.RankMatchFold(txt, choices[i].Name) >
+				fuzzy.RankMatchFold(txt, choices[j].Name)
+		})
+	}
+
+	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+		Data: &discordgo.InteractionResponseData{
+			Choices: choices,
+		},
+	})
+}
+
+func rosterHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
+	var err error
+
+	switch i.Type {
+	case discordgo.InteractionApplicationCommand:
+		err = completedRosterHandler(s, i, bs)
+	case discordgo.InteractionApplicationCommandAutocomplete:
+		err = autocompleteRosterHandler(s, i, bs)
+	}
+
 	if err != nil {
 		log.Println(err.Error())
 	}
 }
 
 func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
-	sqs, _ := bs.Platform.GetSquads()
-	utils.ApplySeeds(sqs)
+	sqmap, err := bs.League.GetSquads()
+	if err != nil {
+		log.Println(err.Error())
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "could not get roster list--go complain to Commish",
+			},
+		})
+		return
+	}
+
+	sqs := utils.Values(sqmap)
+	league.ApplySeeds(sqs)
 
 	tBAMF := table.NewWriter()
 	tBAMF.SetStyle(table.StyleRounded)
@@ -147,7 +189,7 @@ func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *Bo
 		}, sqs[6:]),
 	)
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{

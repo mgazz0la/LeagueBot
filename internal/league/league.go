@@ -1,68 +1,60 @@
 package league
 
 import (
-	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/mgazz0la/leaguebot/internal/domain"
 	"github.com/mgazz0la/leaguebot/internal/platform"
-	"github.com/mgazz0la/leaguebot/internal/utils"
 )
 
 type (
 	LeagueState struct {
-		mu sync.Mutex
+		platform platform.Platform
 
-		players map[domain.PlayerID]*domain.Player
-		squads  map[domain.SquadID]*domain.Squad
+		txmu         sync.Mutex
+		transactions map[domain.TransactionID]domain.Transaction
 	}
 )
 
-func SquadToString(s *domain.Squad, pmap map[domain.PlayerID]*domain.Player) string {
-	if s == nil {
-		return ""
+func NewLeague(platform platform.Platform) *LeagueState {
+	return &LeagueState{
+		platform: platform,
 	}
-	return fmt.Sprintf("%s\n%s\n%s", s.Name, strings.Join(utils.Map(func(p domain.PlayerID) string {
-		return fmt.Sprintf("%s\n", pmap[p].String())
-	}, s.Starters), "\n"),
-		strings.Join(utils.Map(func(p domain.PlayerID) string {
-			return fmt.Sprintf("%s\n", pmap[p].String())
-		}, s.Bench), "\n"))
 }
 
-func (ls *LeagueState) GetSquads() map[domain.SquadID]*domain.Squad {
-	return ls.squads
-}
-
-func (ls *LeagueState) GetPlayerMap() map[domain.PlayerID]*domain.Player {
-	return ls.players
-}
-
-func (ls *LeagueState) Load(p platform.Platform) error {
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
-	ls.players = make(map[domain.PlayerID]*domain.Player)
-	ls.squads = make(map[domain.SquadID]*domain.Squad)
-
-	sqs, err := p.GetSquads()
+func (ls *LeagueState) GetPlayerByID(pid domain.PlayerID) (domain.Player, bool) {
+	pmap, err := ls.platform.GetPlayers()
 	if err != nil {
-		return err
+		return domain.Player{}, false
 	}
 
-	for _, sq := range sqs {
-		ls.squads[sq.SquadID] = sq
+	p, ok := pmap[pid]
+	if ok {
+		return *p, true
 	}
+	return domain.Player{}, false
+}
 
-	players, err := p.GetPlayers()
+func (ls *LeagueState) GetSquadByID(sqid domain.SquadID) (domain.Squad, bool) {
+	sqs, err := ls.GetSquads()
 	if err != nil {
-		return err
+		return domain.Squad{}, false
 	}
 
-	for _, p := range players {
-		ls.players[p.PlayerID] = p
+	sq, ok := sqs[sqid]
+	if ok {
+		return *sq, true
 	}
+	return domain.Squad{}, false
+}
 
-	return nil
+func (ls *LeagueState) GetTransactionByID(txid domain.TransactionID) (domain.Transaction, bool) {
+	ls.txmu.Lock()
+	defer ls.txmu.Unlock()
+	tx, ok := ls.transactions[txid]
+	return tx, ok
+}
+
+func (ls *LeagueState) GetSquads() (map[domain.SquadID]*domain.Squad, error) {
+	return ls.platform.GetSquads()
 }

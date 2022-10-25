@@ -1,10 +1,11 @@
-package utils
+package league
 
 import (
 	"sort"
 	"time"
 
 	"github.com/mgazz0la/leaguebot/internal/domain"
+	"github.com/mgazz0la/leaguebot/internal/utils"
 )
 
 type ByRank []*domain.Squad
@@ -41,5 +42,5 @@ func ApplySeeds(sqs []*domain.Squad) {
 }
 
 func GetCurrentWeek() uint {
-	return uint(Second(time.Now().AddDate(0, 0, -1).ISOWeek()) - 35)
+	return uint(utils.Second(time.Now().AddDate(0, 0, -2).ISOWeek()) - 35)
 }

@@ -28,14 +28,17 @@ func main() {
 	botStates := make(map[discord.GuildID]*discord.BotState)
 	for i := range cfg.Guilds {
 		gid := cfg.Guilds[i].GuildID
+
+		sleeper, err := sleeper.NewSleeper(cfg.Guilds[i].SleeperLeagueID)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+
 		botStates[gid] = &discord.BotState{
-			Platform: sleeper.NewSleeper(cfg.Guilds[i].SleeperLeagueID),
-			League:   new(league.LeagueState),
+			League: league.NewLeague(sleeper),
 		}
-		if err = botStates[gid].League.Load(botStates[gid].Platform); err != nil {
-			log.Fatalf("Failed to load league state: %v", err)
-		}
-		go watcher.TransactionWatcher(botStates[cfg.Guilds[i].GuildID])
+		go watcher.TransactionWatcher(botStates[gid])
 	}
 
 	discord.RegisterHandlers(d, botStates)

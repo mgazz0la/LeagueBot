@@ -1,10 +1,13 @@
 package sleeper
 
 type (
-	LeagueID string
-	userID   string
-	rosterID int
-	playerID string
+	LeagueID          string
+	userID            string
+	rosterID          int
+	playerID          string
+	transactionType   string
+	transactionStatus string
+	transactionID     string
 
 	player struct {
 		PlayerID  playerID `json:"player_id"`
@@ -45,8 +48,33 @@ type (
 	}
 
 	transaction struct {
-		Type string `json:"type"`
+		Type            transactionType   `json:"type"`
+		Status          transactionStatus `json:"status"`
+		TransactionID   transactionID     `json:"transaction_id"`
+		TimestampMillis uint              `json:"status_updated"`
+
+		InvolvedRosters []rosterID            `json:"roster_ids"`
+		Adds            map[playerID]rosterID `json:"adds"`
+		Drops           map[playerID]rosterID `json:"drops"`
+		WaiverBudget    []struct {
+			Sender   rosterID `json:"sender"`
+			Receiver rosterID `json:"receiver"`
+			Amount   uint     `json:"amount"`
+		} `json:"waiver_budget"`
+
+		Settings struct {
+			WaiverBid uint `json:"waiver_bid"`
+		} `json:"settings"`
 	}
+)
+
+const (
+	transactionTypeFreeAgent transactionType = "free_agent"
+	transactionTypeWaiver    transactionType = "waiver"
+	transactionTypeTrade     transactionType = "trade"
+
+	transactionStatusSuccess transactionStatus = "complete"
+	transactionStatusFailed  transactionStatus = "failed"
 )
 
 func (r roster) PointsFor() float32 {
