@@ -9,6 +9,7 @@ import (
 )
 
 type (
+	AvatarID        string
 	SquadID         string
 	PlayerID        string
 	TransactionID   string
@@ -38,6 +39,7 @@ type (
 		OwnerName string
 		Seed      uint
 		SquadID   SquadID
+		AvatarID  AvatarID
 
 		Wins          uint
 		Losses        uint
@@ -87,6 +89,8 @@ type (
 		Timestamp     time.Time
 		Transfers     map[SquadID]*TradeTransfer
 	}
+
+	TransactionMap map[TransactionID]Transaction
 )
 
 const (

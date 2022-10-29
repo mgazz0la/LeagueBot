@@ -23,6 +23,7 @@ type (
 		Metadata    struct {
 			TeamName string `json:"team_name"`
 		} `json:"metadata"`
+		AvatarID string `json:"avatar"`
 	}
 
 	roster struct {

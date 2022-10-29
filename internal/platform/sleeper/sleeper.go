@@ -138,6 +138,7 @@ func (s *Sleeper) GetSquads() (map[domain.SquadID]*domain.Squad, error) {
 			Name:          us[i].Metadata.TeamName,
 			OwnerName:     us[i].DisplayName,
 			SquadID:       sqid,
+			AvatarID:      domain.AvatarID(us[i].AvatarID),
 			Wins:          rs[i].Settings.Wins,
 			Losses:        rs[i].Settings.Losses,
 			PointsFor:     rs[i].PointsFor(),
@@ -244,7 +245,7 @@ func (s *Sleeper) handleFreeAgentTransaction(txn *transaction) (domain.Transacti
 	}
 	fa.SquadID = domain.SquadID(fmt.Sprint(txn.InvolvedRosters[0]))
 
-	if len(txn.Adds)+len(txn.Drops) != 1 {
+	if len(txn.Adds)+len(txn.Drops) > 2 {
 		return nil, errors.New("unexpected number of add/drops")
 	}
 	for add := range txn.Adds {

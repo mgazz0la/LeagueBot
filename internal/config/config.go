@@ -4,20 +4,23 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/mgazz0la/leaguebot/internal/controller/discord"
 	"github.com/mgazz0la/leaguebot/internal/platform/sleeper"
 )
 
-type Config struct {
-	Token  string `json:"token"`
-	Guilds []struct {
-		GuildName             string            `json:"guild_name"`
-		GuildID               discord.GuildID   `json:"guild_id"`
-		LeagueName            string            `json:"league_name"`
-		SleeperLeagueID       sleeper.LeagueID  `json:"sleeper_league_id"`
-		NotificationChannelID discord.ChannelID `json:"notification_channel_id"`
-	} `json:"guilds"`
-}
+type (
+	Guild struct {
+		GuildName             string           `json:"guild_name"`
+		GuildID               string           `json:"guild_id"`
+		LeagueName            string           `json:"league_name"`
+		SleeperLeagueID       sleeper.LeagueID `json:"sleeper_league_id"`
+		NotificationChannelID string           `json:"notification_channel_id"`
+	}
+
+	Config struct {
+		Token  string  `json:"token"`
+		Guilds []Guild `json:"guilds"`
+	}
+)
 
 const CONFIG_FILE = "config.json"
 

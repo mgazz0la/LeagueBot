@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/mgazz0la/leaguebot/internal/config"
 	"github.com/mgazz0la/leaguebot/internal/controller/discord"
+	"github.com/mgazz0la/leaguebot/internal/domain"
 	"github.com/mgazz0la/leaguebot/internal/league"
 	"github.com/mgazz0la/leaguebot/internal/platform/sleeper"
 	"github.com/mgazz0la/leaguebot/internal/watcher"
@@ -27,7 +28,7 @@ func main() {
 
 	botStates := make(map[discord.GuildID]*discord.BotState)
 	for i := range cfg.Guilds {
-		gid := cfg.Guilds[i].GuildID
+		gid := discord.GuildID(cfg.Guilds[i].GuildID)
 
 		sleeper, err := sleeper.NewSleeper(cfg.Guilds[i].SleeperLeagueID)
 		if err != nil {
@@ -36,14 +37,30 @@ func main() {
 		}
 
 		botStates[gid] = &discord.BotState{
-			League: league.NewLeague(sleeper),
+			Session:     d,
+			GuildConfig: cfg.Guilds[i],
+			League:      league.NewLeague(sleeper),
 		}
-		go watcher.TransactionWatcher(botStates[gid])
+
+		go watcher.NewTransactionWatcher(botStates[gid]).Run()
 	}
 
 	discord.RegisterHandlers(d, botStates)
 
 	log.Println("ready")
+	gid := discord.GuildID(cfg.Guilds[0].GuildID)
+	add := domain.PlayerID("8138")
+	drop := domain.PlayerID("4666")
+	m, err := botStates[gid].League.TransactionToDiscordMessage(domain.FreeAgentTransaction{
+		SquadID: domain.SquadID("1"),
+		Add:     &add,
+		Drop:    &drop,
+	})
+	if err != nil {
+		log.Println(err.Error())
+	} else {
+		botStates[gid].Session.ChannelMessageSendComplex(botStates[gid].GuildConfig.NotificationChannelID, m)
+	}
 
 	defer d.Close()
 	stop := make(chan os.Signal, 1)
