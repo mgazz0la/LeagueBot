@@ -9,11 +9,12 @@ import (
 
 type (
 	Guild struct {
-		GuildName             string           `json:"guild_name"`
-		GuildID               string           `json:"guild_id"`
-		LeagueName            string           `json:"league_name"`
-		SleeperLeagueID       sleeper.LeagueID `json:"sleeper_league_id"`
-		NotificationChannelID string           `json:"notification_channel_id"`
+		GuildName             string            `json:"guild_name"`
+		GuildID               string            `json:"guild_id"`
+		LeagueName            string            `json:"league_name"`
+		SleeperLeagueID       sleeper.LeagueID  `json:"sleeper_league_id"`
+		NotificationChannelID string            `json:"notification_channel_id"`
+		SquadOwners           map[string]string `json:"squad_owners"`
 	}
 
 	Config struct {

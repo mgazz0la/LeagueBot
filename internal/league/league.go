@@ -14,14 +14,17 @@ type (
 	LeagueState struct {
 		platform platform.Platform
 
+		squadOwners map[domain.SquadID]string
+
 		txmu         sync.Mutex
 		transactions map[domain.TransactionID]domain.Transaction
 	}
 )
 
-func NewLeague(platform platform.Platform) *LeagueState {
+func NewLeague(platform platform.Platform, squadOwners map[domain.SquadID]string) *LeagueState {
 	return &LeagueState{
-		platform: platform,
+		platform:    platform,
+		squadOwners: squadOwners,
 	}
 }
 
@@ -41,48 +44,93 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 			return nil, errors.New("squad fail")
 		}
 
-		var thumbnailID domain.PlayerID
-		var embedFields []*discordgo.MessageEmbedField
+		s := ls.squadOwners[sq.SquadID]
 		if fa.Add != nil {
 			add, ok := ls.GetPlayerByID(*fa.Add)
 			if !ok {
 				return nil, errors.New("player fail")
 			}
-			embedFields = append(embedFields, &discordgo.MessageEmbedField{
-				Name:   "Add",
-				Value:  add.String(),
-				Inline: true,
-			})
-			thumbnailID = *fa.Add
+			s += " added " + add.String()
+		}
+		if fa.Add != nil && fa.Drop != nil {
+			s += " and"
 		}
 		if fa.Drop != nil {
 			drop, ok := ls.GetPlayerByID(*fa.Drop)
 			if !ok {
 				return nil, errors.New("player fail")
 			}
-			embedFields = append(embedFields, &discordgo.MessageEmbedField{
-				Name:   "Drop",
-				Value:  drop.String(),
-				Inline: true,
-			})
-			if thumbnailID == "" {
-				thumbnailID = *fa.Drop
-			}
+			s += " dropped " + drop.String()
 		}
 
-		m.Embeds = []*discordgo.MessageEmbed{
-			{
-				Title: "Roster Move",
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    sq.Name,
-					IconURL: fmt.Sprintf("https://sleepercdn.com/avatars/thumbs/%s", sq.AvatarID),
-				},
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", thumbnailID),
-				},
-				Fields: embedFields,
+		embed := &discordgo.MessageEmbed{
+			Title:       "Roster Move",
+			Description: s,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name:    sq.Name,
+				IconURL: fmt.Sprintf("https://sleepercdn.com/avatars/thumbs/%s", sq.AvatarID),
 			},
 		}
+		if fa.Add != nil {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *fa.Add),
+			}
+		}
+		if fa.Drop != nil {
+			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *fa.Drop),
+			}
+		}
+		m.Embeds = []*discordgo.MessageEmbed{embed}
+	case domain.TransactionTypeWaiver:
+		w, ok := txn.(domain.WaiverTransaction)
+		if !ok {
+			return nil, errors.New("waiver txn fail")
+		}
+
+		if !w.DidWin {
+			return nil, errors.New("not supporting failed bids yet")
+		}
+
+		sq, ok := ls.GetSquadByID(w.SquadID)
+		if !ok {
+			return nil, errors.New("squad fail")
+		}
+
+		s := ls.squadOwners[sq.SquadID]
+
+		add, ok := ls.GetPlayerByID(w.Add)
+		if !ok {
+			return nil, errors.New("player fail")
+		}
+		s += " added " + add.String() + " for $" + fmt.Sprint(w.Bid)
+
+		if w.Drop != nil {
+			drop, ok := ls.GetPlayerByID(*w.Drop)
+			if !ok {
+				return nil, errors.New("player fail")
+			}
+			s += " and dropped " + drop.String()
+		}
+
+		embed := &discordgo.MessageEmbed{
+			Title:       "Waiver Move",
+			Description: s,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name:    sq.Name,
+				IconURL: fmt.Sprintf("https://sleepercdn.com/avatars/thumbs/%s", sq.AvatarID),
+			},
+			Image: &discordgo.MessageEmbedImage{
+				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", w.Add),
+			},
+		}
+		if w.Drop != nil {
+			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *w.Drop),
+			}
+		}
+		m.Embeds = []*discordgo.MessageEmbed{embed}
+
 	}
 	return m, nil
 }

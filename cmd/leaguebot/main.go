@@ -36,10 +36,14 @@ func main() {
 			continue
 		}
 
+		sqOwners := make(map[domain.SquadID]string)
+		for k, v := range cfg.Guilds[i].SquadOwners {
+			sqOwners[domain.SquadID(k)] = v
+		}
 		botStates[gid] = &discord.BotState{
 			Session:     d,
 			GuildConfig: cfg.Guilds[i],
-			League:      league.NewLeague(sleeper),
+			League:      league.NewLeague(sleeper, sqOwners),
 		}
 
 		go watcher.NewTransactionWatcher(botStates[gid]).Run()
@@ -49,11 +53,13 @@ func main() {
 
 	log.Println("ready")
 	gid := discord.GuildID(cfg.Guilds[0].GuildID)
-	add := domain.PlayerID("8138")
-	drop := domain.PlayerID("4666")
-	m, err := botStates[gid].League.TransactionToDiscordMessage(domain.FreeAgentTransaction{
+	add := domain.PlayerID("4666")
+	drop := domain.PlayerID("1920")
+	m, err := botStates[gid].League.TransactionToDiscordMessage(domain.WaiverTransaction{
 		SquadID: domain.SquadID("1"),
-		Add:     &add,
+		DidWin:  true,
+		Bid:     99,
+		Add:     add,
 		Drop:    &drop,
 	})
 	if err != nil {

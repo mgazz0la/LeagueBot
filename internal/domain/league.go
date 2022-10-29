@@ -20,7 +20,7 @@ type (
 		Bye  uint
 	}
 
-	Position int
+	Position string
 
 	Player struct {
 		Team Team
@@ -198,14 +198,5 @@ func (tt TradeTransaction) CompletedAt() time.Time {
 }
 
 func (p Player) String() string {
-	return fmt.Sprintf("%s %s", p.FirstName, p.LastName)
+	return fmt.Sprintf("%s %s (%s - %s)", p.FirstName, p.LastName, p.Position, p.Team.Name)
 }
-
-const (
-	QB Position = iota
-	RB
-	WR
-	TE
-	K
-	DEF
-)

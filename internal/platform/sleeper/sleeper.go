@@ -190,10 +190,18 @@ func (s *Sleeper) loadPlayerMapFromFile() error {
 
 	s.pmap = make(map[domain.PlayerID]*domain.Player)
 	for k, v := range players {
+		team := "FA"
+		if v.Team != "" {
+			team = v.Team
+		}
 		s.pmap[domain.PlayerID(k)] = &domain.Player{
 			FirstName: v.FirstName,
 			LastName:  v.LastName,
 			PlayerID:  domain.PlayerID(v.PlayerID),
+			Position:  domain.Position(v.Position),
+			Team: domain.Team{
+				Name: team,
+			},
 		}
 	}
 
