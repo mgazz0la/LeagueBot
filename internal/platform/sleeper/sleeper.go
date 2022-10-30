@@ -243,7 +243,7 @@ func (s *Sleeper) fetchPlayerFileIfNeeded() (bool, error) {
 	return true, nil
 }
 
-func (s *Sleeper) handleFreeAgentTransaction(txn *transaction) (domain.Transaction, error) {
+func (s *Sleeper) handleFreeAgentTransaction(txn *transaction) (*domain.FreeAgentTransaction, error) {
 	fa := new(domain.FreeAgentTransaction)
 	fa.TransactionID = domain.TransactionID(txn.TransactionID)
 	fa.Timestamp = time.UnixMilli(int64(txn.TimestampMillis))
@@ -268,7 +268,7 @@ func (s *Sleeper) handleFreeAgentTransaction(txn *transaction) (domain.Transacti
 	return fa, nil
 }
 
-func (s *Sleeper) handleWaiverTransaction(txn *transaction) (domain.Transaction, error) {
+func (s *Sleeper) handleWaiverTransaction(txn *transaction) (*domain.WaiverTransaction, error) {
 	w := new(domain.WaiverTransaction)
 	w.TransactionID = domain.TransactionID(txn.TransactionID)
 	w.Timestamp = time.UnixMilli(int64(txn.TimestampMillis))
@@ -292,7 +292,7 @@ func (s *Sleeper) handleWaiverTransaction(txn *transaction) (domain.Transaction,
 	return w, nil
 }
 
-func (s *Sleeper) handleTradeTransaction(txn *transaction) (domain.Transaction, error) {
+func (s *Sleeper) handleTradeTransaction(txn *transaction) (*domain.TradeTransaction, error) {
 	t := new(domain.TradeTransaction)
 	t.TransactionID = domain.TransactionID(txn.TransactionID)
 	t.Timestamp = time.UnixMilli(int64(txn.TimestampMillis))
