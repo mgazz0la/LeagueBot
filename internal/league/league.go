@@ -3,6 +3,7 @@ package league
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -164,7 +165,11 @@ func (ls *LeagueState) GetSquadByID(sqid domain.SquadID) (domain.Squad, bool) {
 func (ls *LeagueState) GetTransactions() map[domain.TransactionID]domain.Transaction {
 	ls.txmu.Lock()
 	defer ls.txmu.Unlock()
-	ls.transactions, _ = ls.platform.GetTransactions(GetCurrentWeek())
+	var err error
+	ls.transactions, err = ls.platform.GetTransactions(GetCurrentWeek())
+	if err != nil {
+		log.Println(err.Error())
+	}
 	return ls.transactions
 }
 

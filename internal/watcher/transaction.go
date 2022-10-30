@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -32,15 +33,17 @@ func NewTransactionWatcher(
 			current map[domain.TransactionID]domain.Transaction,
 		) {
 			var newTxns []domain.Transaction
-			for k := range current {
+			for k, v := range current {
 				if _, ok := old[k]; !ok {
-					newTxns = append(newTxns, current[k])
+					newTxns = append(newTxns, v)
 				}
 			}
-			for _, txn := range newTxns {
-				m, err := bs.League.TransactionToDiscordMessage(txn)
+			for i := range newTxns {
+				fmt.Println(newTxns[i])
+				m, err := bs.League.TransactionToDiscordMessage(newTxns[i])
 				if err != nil {
 					log.Println(err.Error())
+					continue
 				}
 				bs.Session.ChannelMessageSendComplex(bs.GuildConfig.NotificationChannelID, m)
 			}
