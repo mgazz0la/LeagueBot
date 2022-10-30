@@ -2,10 +2,7 @@ package domain
 
 import (
 	"fmt"
-	"strings"
 	"time"
-
-	"github.com/mgazz0la/leaguebot/internal/utils"
 )
 
 type (
@@ -55,7 +52,6 @@ type (
 	Transaction interface {
 		Type() TransactionType
 		ID() TransactionID
-		String() string
 		CompletedAt() time.Time
 	}
 
@@ -107,21 +103,6 @@ func (fa FreeAgentTransaction) ID() TransactionID {
 	return fa.TransactionID
 }
 
-func (fa FreeAgentTransaction) String() string {
-	s := fmt.Sprintf("Squad %s", fa.SquadID)
-	if fa.Add != nil {
-		s += fmt.Sprintf(" picked up player %s", *fa.Add)
-	}
-	if fa.Add != nil && fa.Drop != nil {
-		s += fmt.Sprintf(" and")
-	}
-	if fa.Drop != nil {
-		s += fmt.Sprintf(" dropped player %s", *fa.Drop)
-	}
-
-	return s
-}
-
 func (fa FreeAgentTransaction) CompletedAt() time.Time {
 	return fa.Timestamp
 }
@@ -134,20 +115,6 @@ func (w WaiverTransaction) ID() TransactionID {
 	return w.TransactionID
 }
 
-func (w WaiverTransaction) String() string {
-	s := fmt.Sprintf("Squad %s", w.SquadID)
-	if w.DidWin {
-		s += fmt.Sprintf(" picked up player %s for $%d", w.Add, w.Bid)
-		if w.Drop != nil {
-			s += fmt.Sprintf(" and dropped player %s", *w.Drop)
-		}
-	} else {
-		s += fmt.Sprintf(" failed to pick up player %s for $%d", w.Add, w.Bid)
-	}
-
-	return s
-}
-
 func (w WaiverTransaction) CompletedAt() time.Time {
 	return w.Timestamp
 }
@@ -158,39 +125,6 @@ func (tt TradeTransaction) Type() TransactionType {
 
 func (tt TradeTransaction) ID() TransactionID {
 	return tt.TransactionID
-}
-
-func (tt TradeTransaction) String() string {
-	var s string
-	for sq, t := range tt.Transfers {
-		s += fmt.Sprintf("Squad %s receives", sq)
-		if len(t.PlayersGained) > 0 {
-			s += " Players [" + strings.Join(utils.Map(func(p PlayerID) string {
-				return string(p)
-			}, t.PlayersGained), ",") + "]"
-		}
-		if len(t.WaiverGained) > 0 {
-			s += " FAAB [" + strings.Join(utils.Map(func(f uint) string {
-				return fmt.Sprintf("$%d", f)
-			}, t.WaiverGained), ",") + "]"
-
-		}
-		s += fmt.Sprintf(" and gives away")
-		if len(t.PlayersLost) > 0 {
-			s += " Players [" + strings.Join(utils.Map(func(p PlayerID) string {
-				return string(p)
-			}, t.PlayersLost), ",") + "]"
-		}
-		if len(t.WaiverLost) > 0 {
-			s += " FAAB [" + strings.Join(utils.Map(func(f uint) string {
-				return fmt.Sprintf("$%d", f)
-			}, t.WaiverLost), ",") + "]"
-
-		}
-		s += "\n"
-	}
-
-	return strings.TrimSuffix(s, "\n")
 }
 
 func (tt TradeTransaction) CompletedAt() time.Time {

@@ -38,6 +38,7 @@ func NewTransactionWatcher(
 					newTxns = append(newTxns, v)
 				}
 			}
+			fmt.Printf("new batch: %d txns", len(newTxns))
 			for i := range newTxns {
 				fmt.Println(newTxns[i])
 				m, err := bs.League.TransactionToDiscordMessage(newTxns[i])
