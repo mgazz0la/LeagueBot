@@ -35,6 +35,7 @@ func RegisterHandlers(d *discordgo.Session, botStates map[GuildID]*BotState) {
 func completedRosterHandler(
 	s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState,
 ) error {
+	log.Printf("@%s: /roster", i.Member.User.Username)
 	sqid := domain.SquadID(i.ApplicationCommandData().Options[0].StringValue())
 	sq, ok := bs.League.GetSquadByID(sqid)
 	if !ok {
@@ -141,6 +142,7 @@ func rosterHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *Bot
 }
 
 func playoffHandler(s *discordgo.Session, i *discordgo.InteractionCreate, bs *BotState) {
+	log.Printf("@%s: /playoffs", i.Member.User.Username)
 	sqmap, err := bs.League.GetSquads()
 	if err != nil {
 		log.Println(err.Error())

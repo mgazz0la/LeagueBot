@@ -87,7 +87,6 @@ func (s *sleeperClient) GetPlayers() (map[playerID]*player, error) {
 
 func (s *sleeperClient) get(path string) ([]byte, error) {
 	url := apiBaseURL + path
-	fmt.Println(url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
