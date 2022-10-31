@@ -85,6 +85,21 @@ func (s *sleeperClient) GetPlayers() (map[playerID]*player, error) {
 	return pmap, nil
 }
 
+func (s *sleeperClient) GetNFLState() (nflState, error) {
+	b, err := s.get("state/nfl")
+	if err != nil {
+		return nflState{}, err
+	}
+
+	var state nflState
+	err = json.Unmarshal(b, &state)
+	if err != nil {
+		return nflState{}, err
+	}
+
+	return state, nil
+}
+
 func (s *sleeperClient) get(path string) ([]byte, error) {
 	url := apiBaseURL + path
 	req, err := http.NewRequest("GET", url, nil)

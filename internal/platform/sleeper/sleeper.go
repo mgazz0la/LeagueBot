@@ -171,6 +171,15 @@ func (s *Sleeper) GetPlayers() (map[domain.PlayerID]*domain.Player, error) {
 	return s.pmap, nil
 }
 
+func (s *Sleeper) GetCurrentWeek() (uint, error) {
+	nflState, err := s.sc.GetNFLState()
+	if err != nil {
+		return 0, err
+	}
+
+	return nflState.Week, nil
+}
+
 func (s *Sleeper) loadPlayerMapFromFile() error {
 	path, err := filepath.Abs(playersJSON)
 	if err != nil {

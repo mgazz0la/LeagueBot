@@ -67,6 +67,10 @@ type (
 			WaiverBid uint `json:"waiver_bid"`
 		} `json:"settings"`
 	}
+
+	nflState struct {
+		Week uint `json:"week"`
+	}
 )
 
 const (

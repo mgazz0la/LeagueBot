@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/mgazz0la/leaguebot/internal/domain"
@@ -14,6 +15,9 @@ import (
 type (
 	LeagueState struct {
 		platform platform.Platform
+
+		currentWeek   uint
+		lastWeekFetch time.Time
 
 		squadOwners map[domain.SquadID]string
 
@@ -166,7 +170,7 @@ func (ls *LeagueState) GetTransactions() map[domain.TransactionID]domain.Transac
 	ls.txmu.Lock()
 	defer ls.txmu.Unlock()
 	var err error
-	ls.transactions, err = ls.platform.GetTransactions(GetCurrentWeek())
+	ls.transactions, err = ls.platform.GetTransactions(ls.GetCurrentWeek())
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -182,4 +186,14 @@ func (ls *LeagueState) GetTransactionByID(txid domain.TransactionID) (domain.Tra
 
 func (ls *LeagueState) GetSquads() (map[domain.SquadID]*domain.Squad, error) {
 	return ls.platform.GetSquads()
+}
+
+func (ls *LeagueState) GetCurrentWeek() uint {
+	if time.Now().Sub(ls.lastWeekFetch) > 4*time.Hour {
+		if week, err := ls.platform.GetCurrentWeek(); err == nil {
+			ls.currentWeek = week
+			ls.lastWeekFetch = time.Now()
+		}
+	}
+	return ls.currentWeek
 }
