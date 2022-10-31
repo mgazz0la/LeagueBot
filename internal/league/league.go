@@ -55,7 +55,7 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 			if !ok {
 				return nil, errors.New("player fail")
 			}
-			s += " added " + add.String()
+			s += " added **" + add.String() + "**"
 		}
 		if fa.Add != nil && fa.Drop != nil {
 			s += " and"
@@ -77,6 +77,15 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 			},
 		}
 		if fa.Add != nil {
+			add, ok := ls.GetPlayerByID(*fa.Add)
+			if !ok {
+				return nil, errors.New("player fail")
+			}
+
+			if add.SearchRank > 500 {
+				embed.Title = "Who the fuck?"
+			}
+
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *fa.Add),
 			}

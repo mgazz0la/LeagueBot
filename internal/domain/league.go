@@ -27,9 +27,10 @@ type (
 
 		PlayerID PlayerID
 
-		FirstName string
-		LastName  string
-		Position  Position
+		FirstName  string
+		LastName   string
+		Position   Position
+		SearchRank uint
 
 		PointsByWeek []uint
 	}

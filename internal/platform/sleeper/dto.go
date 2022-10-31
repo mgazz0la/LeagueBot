@@ -10,11 +10,12 @@ type (
 	transactionID     string
 
 	player struct {
-		PlayerID  playerID `json:"player_id"`
-		FirstName string   `json:"first_name"`
-		LastName  string   `json:"last_name"`
-		Position  string   `json:"position"`
-		Team      string   `json:"team"`
+		PlayerID   playerID `json:"player_id"`
+		FirstName  string   `json:"first_name"`
+		LastName   string   `json:"last_name"`
+		Position   string   `json:"position"`
+		Team       string   `json:"team"`
+		SearchRank uint     `json:"search_rank"`
 	}
 
 	user struct {

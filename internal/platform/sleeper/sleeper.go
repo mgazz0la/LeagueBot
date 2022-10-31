@@ -211,6 +211,7 @@ func (s *Sleeper) loadPlayerMapFromFile() error {
 			Team: domain.Team{
 				Name: team,
 			},
+			SearchRank: v.SearchRank,
 		}
 	}
 
