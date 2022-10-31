@@ -35,7 +35,7 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 	m := new(discordgo.MessageSend)
 	switch txn.Type() {
 	case domain.TransactionTypeFreeAgent:
-		fa, ok := txn.(domain.FreeAgentTransaction)
+		fa, ok := txn.(*domain.FreeAgentTransaction)
 		if !ok {
 			return nil, errors.New("fa txn fail")
 		}
@@ -84,7 +84,7 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 		}
 		m.Embeds = []*discordgo.MessageEmbed{embed}
 	case domain.TransactionTypeWaiver:
-		w, ok := txn.(domain.WaiverTransaction)
+		w, ok := txn.(*domain.WaiverTransaction)
 		if !ok {
 			return nil, errors.New("waiver txn fail")
 		}
