@@ -3,6 +3,7 @@ package watcher
 import (
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"golang.org/x/exp/slices"
@@ -38,9 +39,12 @@ func NewTransactionWatcher(
 					newTxns = append(newTxns, v)
 				}
 			}
-			fmt.Printf("new batch: %d txns", len(newTxns))
+
+			sort.Slice(newTxns, func(i, j int) bool {
+				return newTxns[i].CompletedAt().Before(newTxns[j].CompletedAt())
+			})
+
 			for i := range newTxns {
-				fmt.Println(newTxns[i])
 				m, err := bs.League.TransactionToDiscordMessage(newTxns[i])
 				if err != nil {
 					log.Println(err.Error())
