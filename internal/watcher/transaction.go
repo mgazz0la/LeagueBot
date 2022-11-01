@@ -5,11 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/mgazz0la/leaguebot/internal/controller/discord"
 	"github.com/mgazz0la/leaguebot/internal/domain"
-	"github.com/mgazz0la/leaguebot/internal/utils"
 )
 
 func fetchTransactions(bs *discord.BotState) map[domain.TransactionID]domain.Transaction {
@@ -21,7 +18,7 @@ func doTransactionsDiffer(
 	other map[domain.TransactionID]domain.Transaction,
 ) bool {
 	for k := range other {
-		if !slices.Contains(utils.Keys(current), k) {
+		if _, ok := current[k]; !ok {
 			return true
 		}
 	}
