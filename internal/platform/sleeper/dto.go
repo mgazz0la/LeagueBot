@@ -70,7 +70,7 @@ type (
 	}
 
 	nflState struct {
-		Week uint `json:"week"`
+		Week uint `json:"display_week"`
 	}
 )
 
