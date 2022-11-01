@@ -20,7 +20,12 @@ func doTransactionsDiffer(
 	current map[domain.TransactionID]domain.Transaction,
 	other map[domain.TransactionID]domain.Transaction,
 ) bool {
-	return !slices.Equal(utils.Keys(current), utils.Keys(other))
+	for k := range other {
+		if !slices.Contains(utils.Keys(current), k) {
+			return true
+		}
+	}
+	return false
 }
 
 func sendNewTransactionsToDiscord(
