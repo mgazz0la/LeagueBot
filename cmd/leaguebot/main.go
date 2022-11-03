@@ -52,19 +52,6 @@ func main() {
 	discord.RegisterHandlers(d, botStates)
 
 	log.Println("ready")
-	gid := discord.GuildID(cfg.Guilds[0].GuildID)
-	add := domain.PlayerID("4667")
-	drop := domain.PlayerID("1920")
-	m, err := botStates[gid].League.TransactionToDiscordMessage(&domain.FreeAgentTransaction{
-		SquadID: domain.SquadID("1"),
-		Add:     &add,
-		Drop:    &drop,
-	})
-	if err != nil {
-		log.Println(err.Error())
-	} else {
-		botStates[gid].Session.ChannelMessageSendComplex(botStates[gid].GuildConfig.NotificationChannelID, m)
-	}
 
 	defer d.Close()
 	stop := make(chan os.Signal, 1)
