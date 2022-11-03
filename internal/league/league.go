@@ -86,11 +86,10 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 				embed.Title = "Who the fuck?"
 			}
 
-			embed.Image = &discordgo.MessageEmbedImage{
+			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *fa.Add),
 			}
-		}
-		if fa.Drop != nil {
+		} else {
 			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *fa.Drop),
 			}
@@ -117,7 +116,7 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 		if !ok {
 			return nil, errors.New("player fail")
 		}
-		s += " added " + add.String() + " for $" + fmt.Sprint(w.Bid)
+		s += " added **" + add.String() + "** for **$" + fmt.Sprint(w.Bid) + "**"
 
 		if w.Drop != nil {
 			drop, ok := ls.GetPlayerByID(*w.Drop)
