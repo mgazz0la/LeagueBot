@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -110,6 +111,7 @@ func (s *sleeperClient) get(path string) ([]byte, error) {
 
 	resp, err := s.c.Do(req)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	defer resp.Body.Close()
