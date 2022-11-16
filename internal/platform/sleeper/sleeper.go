@@ -75,7 +75,7 @@ func (s *Sleeper) GetTransactions(week uint) (map[domain.TransactionID]domain.Tr
 			ts[w.ID()] = w
 
 		case transactionTypeTrade:
-			t, err := s.handleWaiverTransaction(txn)
+			t, err := s.handleTradeTransaction(txn)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -259,7 +259,7 @@ func (s *Sleeper) handleFreeAgentTransaction(txn *transaction) (*domain.FreeAgen
 	fa.Timestamp = time.UnixMilli(int64(txn.TimestampMillis))
 
 	if len(txn.InvolvedRosters) != 1 {
-		return nil, errors.New("no roster tied to txn")
+		return nil, fmt.Errorf("no roster tied to txn [%v]", txn.TransactionID)
 	}
 	fa.SquadID = domain.SquadID(fmt.Sprint(txn.InvolvedRosters[0]))
 
@@ -284,7 +284,7 @@ func (s *Sleeper) handleWaiverTransaction(txn *transaction) (*domain.WaiverTrans
 	w.Timestamp = time.UnixMilli(int64(txn.TimestampMillis))
 
 	if len(txn.InvolvedRosters) != 1 {
-		return nil, errors.New("no roster tied to txn")
+		return nil, fmt.Errorf("no roster tied to txn [%v]", txn.TransactionID)
 	}
 	w.SquadID = domain.SquadID(fmt.Sprint(txn.InvolvedRosters[0]))
 	w.DidWin = (txn.Status == transactionStatusSuccess)

@@ -82,8 +82,8 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 				return nil, errors.New("player fail")
 			}
 
-			if add.SearchRank > 500 {
-				embed.Title = "Who the fuck?"
+			if add.SearchRank > 1000 {
+				embed.Title = "Who???"
 			}
 
 			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
@@ -133,14 +133,9 @@ func (ls *LeagueState) TransactionToDiscordMessage(
 				Name:    sq.Name,
 				IconURL: fmt.Sprintf("https://sleepercdn.com/avatars/thumbs/%s", sq.AvatarID),
 			},
-			Image: &discordgo.MessageEmbedImage{
+			Thumbnail: &discordgo.MessageEmbedThumbnail{
 				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", w.Add),
 			},
-		}
-		if w.Drop != nil {
-			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-				URL: fmt.Sprintf("https://sleepercdn.com/content/nfl/players/%s.jpg", *w.Drop),
-			}
 		}
 		m.Embeds = []*discordgo.MessageEmbed{embed}
 
